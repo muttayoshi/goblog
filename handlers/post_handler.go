@@ -61,11 +61,11 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := map[string]interface{}{
-		"data":       posts,
-		"page":       page,
-		"limit":      limit,
-		"total":      total,
-		"totalPages": (total + limit - 1) / limit,
+		"data":        posts,
+		"page":        page,
+		"limit":       limit,
+		"total":       total,
+		"total_pages": (total + limit - 1) / limit,
 	}
 
 	json.NewEncoder(w).Encode(resp)
@@ -96,7 +96,19 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+// GetPostByID retrieves a post by its ID
+// @Summary Get post by ID
+// @Description Get post by ID
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param id path int true "Post ID"
+// @Success 200 {object} models.Post
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /post/{id} [get]
 func GetPostByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -105,7 +117,7 @@ func GetPostByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var p models.Post
-	err = database.DB.QueryRow("SELECT id, title, content FROM posts WHERE id = ?", id).Scan(&p.ID, &p.Title, &p.Content)
+	err = database.DB.QueryRow("SELECT id, title, content, created_at, updated_at FROM posts WHERE id = ?", id).Scan(&p.ID, &p.Title, &p.Content, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
