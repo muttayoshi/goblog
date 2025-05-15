@@ -7,6 +7,7 @@ import (
 	"github.com/muttayoshi/goblog/models"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetPosts godoc
@@ -18,7 +19,7 @@ import (
 // @Success 200 {object} models.PaginatedPosts
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /posts [get]
+// @Router /posts/ [get]
 func GetPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -31,7 +32,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 {
-		limit = 10
+		limit = 5
 	}
 	offset := (page - 1) * limit
 
@@ -71,7 +72,19 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// CreatePost creates a new post
+// @Summary Create a new post
+// @Description Create a new post
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param post body models.Post true "Post"
+// @Success 201 {object} models.Post
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /post/ [post]
 func CreatePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	var p models.Post
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -93,6 +106,8 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	id, _ := res.LastInsertId()
 	p.ID = int(id)
+	p.CreatedAt = time.Now().Format(time.RFC3339)
+	p.UpdatedAt = time.Now().Format(time.RFC3339)
 	json.NewEncoder(w).Encode(p)
 }
 
