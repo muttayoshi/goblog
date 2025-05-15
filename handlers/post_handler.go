@@ -15,12 +15,38 @@ import (
 // @Tags posts
 // @Accept json
 // @Produce json
-// @Success 200 {array} models.Post
+// @Success 200 {object} models.PaginatedPosts
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /posts [get]
 func GetPosts(w http.ResponseWriter, r *http.Request) {
-	rows, err := database.DB.Query("SELECT id, title, content, created_at, updated_at FROM posts")
+	w.Header().Set("Content-Type", "application/json")
+
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	var total int
+	err = database.DB.QueryRow("SELECT COUNT(*) FROM posts").Scan(&total)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rows, err := database.DB.Query(
+		"SELECT id, title, content, created_at, updated_at FROM posts LIMIT ? OFFSET ?",
+		limit, offset,
+	)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -33,7 +59,16 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&p.ID, &p.Title, &p.Content, &p.CreatedAt, &p.UpdatedAt)
 		posts = append(posts, p)
 	}
-	json.NewEncoder(w).Encode(posts)
+
+	resp := map[string]interface{}{
+		"data":       posts,
+		"page":       page,
+		"limit":      limit,
+		"total":      total,
+		"totalPages": (total + limit - 1) / limit,
+	}
+
+	json.NewEncoder(w).Encode(resp)
 }
 
 func CreatePost(w http.ResponseWriter, r *http.Request) {
