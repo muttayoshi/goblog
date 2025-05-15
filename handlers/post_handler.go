@@ -16,6 +16,8 @@ import (
 // @Tags posts
 // @Accept json
 // @Produce json
+// @Param page query int false "Page number"
+// @Param limit query int false "Number of posts per page"
 // @Success 200 {object} models.PaginatedPosts
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse

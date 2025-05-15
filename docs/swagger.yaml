@@ -104,6 +104,15 @@ paths:
       consumes:
       - application/json
       description: Get all posts
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of posts per page
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
